@@ -1,0 +1,16 @@
+GEM
+  remote: https://rubygems.org/
+  specs:
+    minitest (5.10.1)
+    minitest-debugger (1.0.3)
+      minitest (~> 5.0)
+
+PLATFORMS
+  ruby
+
+DEPENDENCIES
+  minitest (~> 5.8, >= 5.8.4)
+  minitest-debugger (~> 1.0, >= 1.0.3)
+
+BUNDLED WITH
+   1.14.3
