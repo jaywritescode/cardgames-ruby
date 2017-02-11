@@ -1,5 +1,6 @@
 require 'set'
 require_relative 'cards'
+require_relative 'hand_types'
 
 class PokerHand
   include Comparable
@@ -7,10 +8,21 @@ class PokerHand
   def initialize(array_of_cards)
     @cards = array_of_cards
     @size = array_of_cards.count
+    set_type_of_hand
   end
 
   def set_type_of_hand
-    # TODO: implement me
+    case
+    when straight_flush? then self.extend HandTypes::StraightFlush
+    when four_of_a_kind? then self.extend HandTypes::FourOfAKind
+    when full_house? then self.extend HandTypes::FullHouse
+    when flush? then self.extend HandTypes::Flush
+    when straight? then self.extend HandTypes::Straight
+    when three_of_a_kind? then self.extend HandTypes::ThreeOfAKind
+    when two_pair? then self.extend HandTypes::TwoPair
+    when pair? then self.extend HandTypes::Pair
+    else self.extend HandTypes::HighCard
+    end
   end
 
   def straight_flush?

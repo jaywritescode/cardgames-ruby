@@ -168,6 +168,20 @@ class TestPokerHand < Minitest::Test
     end
   end
 
+  def random_hand_methods
+    @random_hand_methods = [
+      :make_random_straight_flush,
+      :random_hand_four_of_a_kind,
+      :random_hand_full_house,
+      :random_hand_flush,
+      :random_hand_straight,
+      :random_hand_three_of_a_kind,
+      :random_hand_more_than_one_pair,
+      :random_hand_one_pair,
+      :random_hand_no_pairs
+    ]
+  end
+
   def random_card(rank: nil, suit: nil)
     Card.new(rank || random_rank, suit || random_suit)
   end

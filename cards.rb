@@ -41,4 +41,8 @@ class Card
     end
     deck
   end
+
+  def self.rank_index(rank)
+    RANKS[rank] - 2
+  end
 end
