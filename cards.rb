@@ -32,6 +32,11 @@ class Card
     Card::RANKS[card.rank]
   end
 
+  def self.from_str(str)
+    r, s = str.each_char.to_a
+    Card.new Card::rank_strings[r], Card::suit_strings[s]
+  end
+
   def self.create_deck
     deck = []
     Card::SUITS.each do |suit|
@@ -44,5 +49,34 @@ class Card
 
   def self.rank_index(rank)
     RANKS[rank] - 2
+  end
+
+  private
+
+  def self.rank_strings
+    @rank_strings ||= {
+      '2' => :two,
+      '3' => :three,
+      '4' => :four,
+      '5' => :five,
+      '6' => :six,
+      '7' => :seven,
+      '8' => :eight,
+      '9' => :nine,
+      'T' => :ten,
+      'J' => :jack,
+      'Q' => :queen,
+      'K' => :king,
+      'A' => :ace
+    }
+  end
+
+  def self.suit_strings
+    @suit_strings ||= {
+      'C' => :clubs,
+      'D' => :diamonds,
+      'H' => :hearts,
+      'S' => :suits
+    }
   end
 end
