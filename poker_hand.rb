@@ -83,7 +83,20 @@ class PokerHand
     cards_by_rank.map(&:to_s).join(", ")
   end
 
+  def <=>(other)
+    if self.rank == other.rank
+      self.ranks_in_sort_order <=> other.ranks_in_sort_order
+    else
+      self.rank <=> other.rank
+    end
+  end
+
+  def ranks_in_sort_order
+    cards_by_rank.map {|c| c.first.rank}
+  end
+
   private
+
   def cards_group_by_rank
     @cards_group_by_rank ||= @cards.group_by(&:rank)
   end

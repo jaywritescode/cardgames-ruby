@@ -51,6 +51,14 @@ class TestPokerHand < Minitest::Test
     assert hand.high_card?, "Expected #{hand.to_s} to be no pairs"
   end
 
+  def test_compare
+    # with different hand types
+    lo, hi = (0..random_hand_methods.count).to_a.sample(2).sort!.map do |idx|
+      self.send(random_hand_methods[idx])
+    end
+    assert (lo <=> hi) < 0, "Expected #{hi.to_s} to beat #{lo.to_s}"
+  end
+
   def random_hand_straight_flush(size: 5)
     cards_needed = [size, 5].min
     flush_suit = random_suit
