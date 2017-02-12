@@ -104,9 +104,8 @@ class PokerHand
   # Gets a mapping of each rank to an array of cards with that rank,
   # sorted with ace high.
   def cards_rank_map
-    @cards_rank_map ||= cards_group_by_rank.sort_by do |key, _|
-      -(Card::RANKS[key])
-    end
+    @cards_rank_map ||=
+      Hash[cards_group_by_rank.sort_by {|key, _| -(Card::rank_index(key)) }]
   end
 
   # Gets an array of card arrays, grouped by rank.

@@ -3,11 +3,12 @@ require 'set'
 class Card
   include Comparable
 
-  RANKS = {
-    two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8,
-    nine: 9, ten: 10, jack: 11, queen: 12, king: 13, ace: 14
-  }
-  SUITS = [:clubs, :diamonds, :hearts, :spades]
+  RANKS = [
+    :two, :three, :four, :five, :six, :seven, :eight,
+    :nine, :ten, :jack, :queen, :king, :ace
+  ].freeze
+  RANK_VALUES = Hash[RANKS.zip(2..14)].freeze
+  SUITS = [:clubs, :diamonds, :hearts, :spades].freeze
 
   attr_reader :rank, :suit
 
@@ -17,7 +18,7 @@ class Card
   end
 
   def <=>(other)
-    (RANKS[@rank] - RANKS[other.rank]) <=> 0
+    (self.value - other.value) <=> 0
   end
 
   def to_s
@@ -28,8 +29,8 @@ class Card
     @rank == other.rank && @suit == other.suit
   end
 
-  def self.value(card)
-    Card::RANKS[card.rank]
+  def value
+    Card::RANK_VALUES[rank]
   end
 
   def self.from_str(str)
@@ -40,7 +41,7 @@ class Card
   def self.create_deck
     deck = []
     Card::SUITS.each do |suit|
-      Card::RANKS.keys.each do |rank|
+      Card::RANKS.each do |rank|
         deck << Card.new(rank, suit)
       end
     end
@@ -48,7 +49,15 @@ class Card
   end
 
   def self.rank_index(rank)
-    RANKS[rank] - 2
+    RANK_VALUES[rank] - 2
+  end
+
+  def self.ranks
+    RANKS
+  end
+
+  def self.suits
+    SUITS
   end
 
   private

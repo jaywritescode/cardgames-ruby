@@ -59,13 +59,17 @@ class TestPokerHand < Minitest::Test
     assert (lo <=> hi) < 0, "Expected #{hi.to_s} to beat #{lo.to_s}"
   end
 
+  # def test_compare_straight_flush
+  #   lo, hi = (0..12)
+  # end
+
   def random_hand_straight_flush(size: 5)
     cards_needed = [size, 5].min
     flush_suit = random_suit
 
     high_index = ((cards_needed - 2)...13).to_a.sample
-    cards = (0...5).map do |i|
-      Card.new(Card::RANKS.keys[high_index - i], flush_suit)
+    cards = (0...cards_needed).map do |i|
+      Card.new(Card::ranks[high_index - i], flush_suit)
     end
 
     return cards if cards.count >= size
@@ -76,7 +80,7 @@ class TestPokerHand < Minitest::Test
 
   def random_hand_flush(size: 5)
     flush_suit = random_suit
-    cards = Card::RANKS.keys.sample([size, 5].min).map do |rank|
+    cards = Card::ranks.sample([size, 5].min).map do |rank|
       Card.new(rank, flush_suit)
     end
 
@@ -92,7 +96,7 @@ class TestPokerHand < Minitest::Test
 
     high_index = ((cards_needed - 2)...13).to_a.sample
     cards = (0...5).map do |i|
-      Card.new(Card::RANKS.keys[high_index - i], random_suit)
+      Card.new(Card::ranks[high_index - i], random_suit)
     end
 
     return cards if cards.count >= size
@@ -103,7 +107,7 @@ class TestPokerHand < Minitest::Test
 
   def random_hand_four_of_a_kind(size: 5)
     n_rank = random_rank
-    cards = Card::SUITS.map do |suit|
+    cards = Card::suits.map do |suit|
       Card.new(n_rank, suit)
     end
 
@@ -112,11 +116,11 @@ class TestPokerHand < Minitest::Test
   end
 
   def random_hand_full_house(size: 5)
-    trip_rank, pair_rank = *(Card::RANKS.keys.sample(2))
-    cards = Card::SUITS.sample(3).map do |suit|
+    trip_rank, pair_rank = *(Card::ranks.sample(2))
+    cards = Card::suits.sample(3).map do |suit|
       Card.new(trip_rank, suit)
     end
-    cards += Card::SUITS.sample(2).map do |suit|
+    cards += Card::suits.sample(2).map do |suit|
       Card.new(pair_rank, suit)
     end
 
@@ -128,11 +132,11 @@ class TestPokerHand < Minitest::Test
 
   def random_hand_three_of_a_kind(size: 5)
     trip_rank = random_rank
-    cards = Card::SUITS.sample(3).map do |suit|
+    cards = Card::suits.sample(3).map do |suit|
       Card.new(trip_rank, suit)
     end
 
-    Card::RANKS.keys.select {|r| r != trip_rank}.sample(size - 3).each do |r|
+    Card::ranks.select {|r| r != trip_rank}.sample(size - 3).each do |r|
       cards << Card.new(r, random_suit)
     end
     cards
@@ -141,9 +145,9 @@ class TestPokerHand < Minitest::Test
   def random_hand_more_than_one_pair(size: 5)
     raise unless size >= 4
 
-    pair_ranks = Card::RANKS.keys.sample(2)
+    pair_ranks = Card::ranks.sample(2)
     cards = pair_ranks.flat_map do |rank|
-      Card::SUITS.sample(2).map do |suit|
+      Card::suits.sample(2).map do |suit|
         Card.new(rank, suit)
       end
     end
@@ -160,25 +164,25 @@ class TestPokerHand < Minitest::Test
 
   def random_hand_one_pair(size: 5)
     pair_rank = random_rank
-    cards = Card::SUITS.sample(2).map do |suit|
+    cards = Card::suits.sample(2).map do |suit|
       Card.new(pair_rank, suit)
     end
 
-    Card::RANKS.keys.select {|r| r != pair_rank}.sample(size - 2).each do |r|
+    Card::ranks.select {|r| r != pair_rank}.sample(size - 2).each do |r|
       cards << Card.new(r, random_suit)
     end
     cards
   end
 
   def random_hand_no_pairs(size: 5)
-    Card::RANKS.keys.sample(size).inject([]) do |acc, rank|
+    Card::ranks.sample(size).inject([]) do |acc, rank|
       acc << Card.new(rank, random_suit)
     end
   end
 
   def random_hand_methods
     @random_hand_methods = [
-      :make_random_straight_flush,
+      :random_straight_flush,
       :random_hand_four_of_a_kind,
       :random_hand_full_house,
       :random_hand_flush,
@@ -195,7 +199,7 @@ class TestPokerHand < Minitest::Test
   end
 
   def random_rank
-    Card::RANKS.keys.sample
+    Card::RANKS.sample
   end
 
   def random_suit
