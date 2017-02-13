@@ -29,8 +29,11 @@ class PokerHand
     cards = cards_by_suit.find {|cards| cards.count >= cards_needed}
     return unless cards
 
+    # TODO: five-high straight flush won't work
+
     cards.sort.reverse.map(&:rank).each_cons(cards_needed).any? do |list|
-      Card::RANKS[list.first] - Card::RANKS[list.last] == cards_needed - 1
+      # TODO: this is fragile
+      Card::RANK_VALUES[list.first] - Card::RANK_VALUES[list.last] == cards_needed - 1
     end
   end
 
@@ -51,10 +54,12 @@ class PokerHand
 
   # Does this hand contain a straight?
   def straight?
-    return unless cards_rank_map.count >= cards_needed
+    return true if cards_rank_map.has_key?(:ace) &&
+      Card::ranks[0, cards_needed - 1].all? {|r| cards_rank_map.has_key?(r)}
 
     cards_rank_map.map(&:first).each_cons(cards_needed).any? do |list|
-      Card::RANKS[list.first] - Card::RANKS[list.last] == cards_needed - 1
+      # TODO: this is fragile
+      Card::RANK_VALUES[list.first] - Card::RANK_VALUES[list.last] == cards_needed - 1
     end
   end
 

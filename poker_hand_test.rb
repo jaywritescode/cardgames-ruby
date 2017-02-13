@@ -1,5 +1,6 @@
 require 'minitest/autorun'
 require 'set'
+require 'pry-byebug'
 
 require_relative 'poker_hand'
 require_relative 'cards'
@@ -53,15 +54,20 @@ class TestPokerHand < Minitest::Test
 
   def test_compare
     # with different hand types
-    lo, hi = (0..random_hand_methods.count).to_a.sample(2).sort!.map do |idx|
-      self.send(random_hand_methods[idx])
+    lo, hi = (0...random_hand_methods.count).to_a.sample(2).sort!.map do |idx|
+      PokerHand.new self.send(random_hand_methods[idx])
     end
+
     assert (lo <=> hi) < 0, "Expected #{hi.to_s} to beat #{lo.to_s}"
   end
 
-  # def test_compare_straight_flush
-  #   lo, hi = (0..12)
-  # end
+  def test_compare_straight_flush
+    lo, hi = (3..13).to_a.sample(2).sort!.map do |idx|
+      PokerHand.new make_straight_flush(high_card_rank_idx: idx)
+    end
+
+    assert (lo <=> hi) < 0, "Expected #{hi.to_s} to beat #{lo.to_s}"
+  end
 
   def random_hand_straight_flush(size: 5)
     cards_needed = [size, 5].min
@@ -70,6 +76,20 @@ class TestPokerHand < Minitest::Test
     high_index = ((cards_needed - 2)...13).to_a.sample
     cards = (0...cards_needed).map do |i|
       Card.new(Card::ranks[high_index - i], flush_suit)
+    end
+
+    return cards if cards.count >= size
+
+    deck = Card::create_deck.reject {|card| cards.include?(card)}
+    cards += deck.sample(size - 5)
+  end
+
+  def make_straight_flush(high_card_rank_idx:, size: 5)
+    cards_needed = [size, 5].min
+    flush_suit = random_suit
+
+    cards = (0...cards_needed).map do |i|
+      Card.new(Card::ranks[high_card_rank_idx - i], flush_suit)
     end
 
     return cards if cards.count >= size
@@ -182,15 +202,15 @@ class TestPokerHand < Minitest::Test
 
   def random_hand_methods
     @random_hand_methods = [
-      :random_straight_flush,
-      :random_hand_four_of_a_kind,
-      :random_hand_full_house,
-      :random_hand_flush,
-      :random_hand_straight,
-      :random_hand_three_of_a_kind,
-      :random_hand_more_than_one_pair,
+      :random_hand_no_pairs,
       :random_hand_one_pair,
-      :random_hand_no_pairs
+      :random_hand_more_than_one_pair,
+      :random_hand_three_of_a_kind,
+      :random_hand_straight,
+      :random_hand_flush,
+      :random_hand_full_house,
+      :random_hand_four_of_a_kind,
+      :random_hand_straight_flush
     ]
   end
 
