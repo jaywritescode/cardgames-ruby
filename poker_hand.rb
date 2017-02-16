@@ -85,7 +85,7 @@ class PokerHand
   end
 
   def to_s
-    cards_by_rank.map(&:to_s).join(", ")
+    cards_by_rank.values.flatten.map(&:to_s).join(", ")
   end
 
   def <=>(other)
