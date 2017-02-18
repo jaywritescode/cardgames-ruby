@@ -34,19 +34,8 @@ class PokerHand
 
   # Does this hand contain a straight flush?
   def straight_flush?
-    cards = cards_by_suit.values.find {|cards| cards.count >= cards_needed}
-    return false unless cards
-
-    ranks_in_hand = cards.sort!.reverse!.map(&:rank)      # we just need the ranks
-    ranks_in_hand
-      .uniq                                                       # don't need duplicates
-      .take_while {|r| Card::rank_index(r) >= cards_needed - 2}   # we can't have a five-card hand with a four high, for example
-      .any? do |high_rank|                                        # slice the ranks array with +cards_needed+ cards ending at the index of +high_rank+
-        idx = Card::rank_index(high_rank)
-        Card::ranks[(idx - cards_needed + 1)..idx].all? do |r|    # if all the ranks in the slice are also in our ranks array, then we have a straight
-          ranks_in_hand.include?(r)
-        end
-      end
+    my_cards = cards_by_suit.values.find {|suited| suited.count >= cards_needed}
+    my_cards && !(straight_high_card(my_cards).nil?)
   end
 
   # Does this hand contain a four of a kind?
@@ -120,6 +109,24 @@ class PokerHand
   end
 
   private
+
+  # Does the given collection of cards contain a straight? If so, what's
+  # its high card?
+  #
+  # @param hand [Array<Card>] the cards
+  # @return [Card] the high card if there's a straight, otherwise nil
+  def straight_high_card(hand)
+    our_ranks = hand.sort!.reverse!.map(&:rank).uniq
+    high_rank = our_ranks.take_while do |this_rank|
+      Card::rank_index(this_rank) >= cards_needed - 2
+    end.find do |high_rank|
+      idx = Card::rank_index(high_rank)
+      Card::ranks[(idx - cards_needed + 1)..idx].all? do |r|
+        our_ranks.include?(r)
+      end
+    end
+    high_rank && cards_by_rank[high_rank].first
+  end
 
   # Sorts the cards by rank.
   #

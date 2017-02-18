@@ -7,18 +7,18 @@ require_relative 'cards'
 
 class TestPokerHand < Minitest::Test
 
-  def test_straight_flush?
-    hand = PokerHand.new random_hand_straight_flush(size: 7)
+  def test_straight_flush
+    hand = PokerHand.new random_straight_flush(size: 7)
     assert hand.straight_flush?, "Expected #{hand.to_s} to be a straight flush"
   end
 
-  def test_four_of_a_kind?
-    hand = PokerHand.new random_hand_four_of_a_kind(size: 7)
-    assert hand.four_of_a_kind?, "Expected #{hand.to_s} to be four of a kind"
+  def test_four_of_a_kind
+    hand = PokerHand.new random_four_of_a_kind(size: 7)
+    assert hand.four_of_a_kind?, "Expected #{hand.to_s} to be a four of a kind"
   end
 
   def test_full_house?
-    hand = PokerHand.new random_hand_full_house(size: 7)
+    hand = PokerHand.new random_full_house(size: 7)
     assert hand.full_house?, "Expected #{hand.to_s} to be a full house"
   end
 
@@ -53,9 +53,26 @@ class TestPokerHand < Minitest::Test
   end
 
   def test_compare
-    # with different hand types
-    lo, hi = (0...random_hand_methods.count).to_a.sample(2).sort!.map do |idx|
-      PokerHand.new self.send(random_hand_methods[idx])
+    sf = PokerHand.new %w(5H 6H 7H 8H 9H TH AS).shuffle.map { |e| Card::from_str(e) }
+    foak = PokerHand.new %w(QS QD QC QH 3S 3D 8D).shuffle.map { |e| Card::from_str(e) }
+    fh = PokerHand.new %w(3D 3S 3C JD JC 6H 4D).shuffle.map { |e| Card::from_str(e) }
+    flush = PokerHand.new %w(6S QS JS 2S 5S 6C JD).shuffle.map { |e| Card::from_str(e) }
+    str = PokerHand.new %w(5D 6D 7D 8H 9D 3S 6C).shuffle.map { |e| Card::from_str(e) }
+    toak = PokerHand.new %w(9C 9D 9S 4D JC AD 8H).shuffle.map { |e| Card::from_str(e) }
+    tp = PokerHand.new %w(4C 4D AD AH 7C 7H QD).shuffle.map { |e| Card::from_str(e) }
+    p = PokerHand.new %w(KD KC 4C 8S 9D JS 2H).shuffle.map { |e| Card::from_str(e) }
+    hc = PokerHand.new %w(5C 9D KS 4H 7C TD 3H).shuffle.map { |e| Card::from_str(e) }
+
+    test_hands = [sf, foak, fh, flush, str, toak, tp, p, hc]
+    lo, hi = (0..8).to_a.sample(2).sort!
+
+    assert (lo <=> hi) < 0
+  end
+
+  def test_compare_straight_flush
+    skip
+    lo, hi = (3...13).to_a.sample(2).sort!.map do |idx|
+      PokerHand.new make_straight_flush(high_card_rank_idx: idx)
     end
 
     assert (lo <=> hi) < 0, "Expected #{hi.to_s} to beat #{lo.to_s}"
@@ -208,9 +225,9 @@ class TestPokerHand < Minitest::Test
       :random_hand_three_of_a_kind,
       :random_hand_straight,
       :random_hand_flush,
-      :random_hand_full_house,
-      :random_hand_four_of_a_kind,
-      :random_hand_straight_flush
+      :random_full_house,
+      :random_four_of_a_kind,
+      :random_straight_flush
     ]
   end
 
@@ -219,10 +236,10 @@ class TestPokerHand < Minitest::Test
   end
 
   def random_rank
-    Card::RANKS.sample
+    Card::ranks.sample
   end
 
   def random_suit
-    Card::SUITS.sample
+    Card::suits.sample
   end
 end
