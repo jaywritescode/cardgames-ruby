@@ -25,63 +25,82 @@ class PokerHand
     end
   end
 
-  def straight_flush?
-    cards = cards_by_suit.find {|cards| cards.count >= cards_needed}
-    return unless cards
-
-    # TODO: five-high straight flush won't work
-
-    cards.sort.reverse.map(&:rank).each_cons(cards_needed).any? do |list|
-      # TODO: this is fragile
-      Card::RANK_VALUES[list.first] - Card::RANK_VALUES[list.last] == cards_needed - 1
-    end
+  # Gets the best five-card hand from the given cards.
+  #
+  # @return [Array<Card>] the cards in the hand
+  def best_hand
+    raise
   end
 
-  # Does this hand contain four of a kind?
+  # Does this hand contain a straight flush?
+  def straight_flush?
+    cards = cards_by_suit.values.find {|cards| cards.count >= cards_needed}
+    return false unless cards
+
+    ranks_in_hand = cards.sort!.reverse!.map(&:rank)      # we just need the ranks
+    ranks_in_hand
+      .uniq                                                       # don't need duplicates
+      .take_while {|r| Card::rank_index(r) >= cards_needed - 2}   # we can't have a five-card hand with a four high, for example
+      .any? do |high_rank|                                        # slice the ranks array with +cards_needed+ cards ending at the index of +high_rank+
+        idx = Card::rank_index(high_rank)
+        Card::ranks[(idx - cards_needed + 1)..idx].all? do |r|    # if all the ranks in the slice are also in our ranks array, then we have a straight
+          ranks_in_hand.include?(r)
+        end
+      end
+  end
+
+  # Does this hand contain a four of a kind?
   def four_of_a_kind?
-    cards_by_rank[0].count == 4
+    cards_by_rank.values.first.count == 4
   end
 
   # Does this hand contain a full house?
   def full_house?
-    cards_by_rank[0].count == 3 && cards_by_rank[1].count >= 2
+    the_cards = cards_by_rank.values
+    the_cards[0].count == 3 && the_cards[1].count >= 2
   end
 
   # Does this hand contain a flush?
   def flush?
-    cards_by_suit.any? {|cards| cards.count >= cards_needed}
+    cards_by_suit.any? {|_, v| v.count >= cards_needed}
   end
 
   # Does this hand contain a straight?
   def straight?
-    return true if cards_rank_map.has_key?(:ace) &&
-      Card::ranks[0, cards_needed - 1].all? {|r| cards_rank_map.has_key?(r)}
-
-    cards_rank_map.map(&:first).each_cons(cards_needed).any? do |list|
-      # TODO: this is fragile
-      Card::RANK_VALUES[list.first] - Card::RANK_VALUES[list.last] == cards_needed - 1
-    end
+    ranks_in_hand = cards_sorted_ace_high.map(&:rank)             # we just need the ranks
+    ranks_in_hand
+      .uniq                                                       # don't need duplicates
+      .take_while {|r| Card::rank_index(r) >= cards_needed - 2}   # we can't have a five-card hand with a four high, for example
+      .any? do |high_rank|                                        # slice the ranks array with +cards_needed+ cards ending at the index of +high_rank+
+        idx = Card::rank_index(high_rank)
+        Card::ranks[(idx - cards_needed + 1)..idx].all? do |r|    # if all the ranks in the slice are also in our ranks array, then we have a straight
+          ranks_in_hand.include?(r)
+        end
+      end
   end
 
   # Does this hand contain a triplet and no pairs?
   def three_of_a_kind?
-    cards_by_rank[0].count == 3 && cards_by_rank[1].count == 1
+    the_cards = cards_by_rank.values
+    the_cards[0].count == 3 && the_cards[1].count < 2
   end
 
   # Does this hand contain two or more pairs and no trips or quads?
   def two_pair?
-    cards_by_rank[0].count == 2 && cards_by_rank[1].count == 2
+    the_cards = cards_by_rank.values
+    the_cards[0].count == 2 && the_cards[1].count == 2
   end
 
   # Does this hand contain a single pair and no trips or quads?
   def pair?
-    cards_by_rank[0].count == 2 && cards_by_rank[1].count == 1
+    the_cards = cards_by_rank.values
+    the_cards[0].count == 2 && the_cards[1].count < 2
   end
 
   # Does this hand have only singleton ranks? Note that this method can return
   # true if the hand has a flush or straight.
   def high_card?
-    cards_by_rank.all? {|r| r.count == 1}
+    cards_by_rank.all? {|_, v| v.count == 1}
   end
 
   def to_s
@@ -90,42 +109,48 @@ class PokerHand
 
   def <=>(other)
     if self.rank == other.rank
-      self.ranks_in_sort_order <=> other.ranks_in_sort_order
+      self.best_hand <=> other.best_hand
     else
       self.rank <=> other.rank
     end
   end
 
-  def ranks_in_sort_order
-    cards_by_rank.map {|c| c.first.rank}
+  def cards
+    @cards
   end
 
   private
 
-  def cards_group_by_rank
-    @cards_group_by_rank ||= @cards.group_by(&:rank)
+  # Sorts the cards by rank.
+  #
+  # @return [Array<Card>] the cards sorted by rank
+  def cards_sorted_ace_high
+    @cards_sorted_ace_high ||= @cards.sort!.reverse!
   end
 
-  # Gets a mapping of each rank to an array of cards with that rank,
-  # sorted with ace high.
-  def cards_rank_map
-    @cards_rank_map ||=
-      Hash[cards_group_by_rank.sort_by {|key, _| -(Card::rank_index(key)) }]
-  end
-
-  # Gets an array of card arrays, grouped by rank.
+  # Groups all the cards in the hand by rank.
+  #
+  # @return [Hash] a hash where the keys are the ranks and the values are arrays of cards with that rank, sorted by count then rank
   def cards_by_rank
-    @cards_by_rank ||= cards_group_by_rank.values.sort! do |b,a|
-      cmp = a.count <=> b.count
-      cmp.zero? ? a.first <=> b.first : cmp
-    end
+    @cards_by_rank ||= @cards.group_by(&:rank).sort do |b,a|
+      cmp_key_a, cmp_key_b = [a, b].map {|entry| entry[1]}
+
+      cmp = cmp_key_a.count <=> cmp_key_a.count
+      cmp.zero? ? cmp_key_a.first <=> cmp_key_a.first : cmp
+    end.to_h
   end
 
-  # Gets an array of card arrays, grouped by suit.
+  # Groups all the cards in the hand by suit.
+  #
+  # @return [Hash] a hash where the keys are the suits and the values are arrays of cards with that suit
   def cards_by_suit
-    @cards_by_suit ||= @cards.group_by(&:suit).values
+    @cards_by_suit ||= @cards.group_by(&:suit)
   end
 
+  # The number of cards needed to complete a straight or flush
+  # in this hand.
+  #
+  # @return [Integer] the number of cards needed to complete this hand
   def cards_needed
     [@size, 5].min
   end
