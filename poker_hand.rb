@@ -97,7 +97,7 @@ class PokerHand
   # Does this hand have only singleton ranks? Note that this method can return
   # true if the hand has a flush or straight.
   def high_card?
-    cards_by_rank.all? {|_, v| v.count == 1}
+    cards_by_rank.count == @size
   end
 
   def to_s
