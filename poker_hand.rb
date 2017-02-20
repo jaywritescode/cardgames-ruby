@@ -3,6 +3,12 @@ require_relative 'cards'
 require_relative 'hand_types'
 
 class PokerHand
+  # A poker hand. Represents a poker hand from a standard deck with two through
+  # seven cards, no wilds.
+  #
+  # Given k <= 5 cards, a "straight" or "flush" means a k-card straight
+  # or a k-card flush. If k > 5, then this class assumes a 5-card straight or
+  # flush.
   include Comparable
 
   def initialize(array_of_cards)
@@ -10,6 +16,8 @@ class PokerHand
     @size = array_of_cards.count
     set_type_of_hand
   end
+
+  private
 
   def set_type_of_hand
     case
@@ -25,6 +33,8 @@ class PokerHand
     end
   end
 
+  public
+
   # Gets the best five-card hand from the given cards.
   #
   # @return [Array<Card>] the cards in the hand
@@ -32,7 +42,9 @@ class PokerHand
     raise
   end
 
-  # Does this hand contain a straight flush?
+  # Determines if this hand contains a straight flush.
+  #
+  # @return [Boolean] true iff the hand contains a straight flush
   def straight_flush?
     relevant_ranks = cards_by_suit.values.find {|suited| suited.count >= cards_needed}
 
@@ -48,23 +60,31 @@ class PokerHand
     end
   end
 
-  # Does this hand contain a four of a kind?
+  # Determines if this hand contains a four-of-a-kind.
+  #
+  # @return [Boolean] true iff the hand contains a four of a kind.
   def four_of_a_kind?
     cards_by_rank.values.first.count == 4
   end
 
-  # Does this hand contain a full house?
+  # Determines if this hand contains a full house.
+  #
+  # @return [Boolean] true iff the hand contains a full house.
   def full_house?
     the_cards = cards_by_rank.values
     the_cards[0].count == 3 && the_cards[1].count >= 2
   end
 
-  # Does this hand contain a flush?
+  # Determines if this hand contains a flush.
+  #
+  # @return [Boolean] true iff the hand contains a flush.
   def flush?
     cards_by_suit.any? {|_, v| v.count >= cards_needed}
   end
 
-  # Does this hand contain a straight?
+  # Determines if this hand contains a straight.
+  #
+  # @return [Boolean] true iff the hand contains a straight.
   def straight?
     ranks_in_hand = cards_sorted_ace_high.map(&:rank).uniq
 
@@ -76,26 +96,34 @@ class PokerHand
     end
   end
 
-  # Does this hand contain a triplet and no pairs?
+  # Determines if this hand contains a three-of-a-kind.
+  #
+  # @return [Boolean] true iff the hand contains at least three cards of the
+  #   same rank.
   def three_of_a_kind?
-    the_cards = cards_by_rank.values
-    the_cards[0].count == 3 && the_cards[1].count < 2
+    cards_by_rank.values.first.count >= 3
   end
 
-  # Does this hand contain two or more pairs and no trips or quads?
+  # Determines if this hand contains at least two pairs.
+  #
+  # @return [Boolean] true iff the hand contains at least two cards of rank X
+  #   and two cards of rank Y, where X != Y.
   def two_pair?
     the_cards = cards_by_rank.values
-    the_cards[0].count == 2 && the_cards[1].count == 2
+    the_cards[0].count >= 2 && the_cards[1].count >= 2
   end
 
-  # Does this hand contain a single pair and no trips or quads?
+  # Determines if this hand contains a pair.
+  #
+  # @return [Boolean] true iff the hand contains at least two cards of the
+  #   same rank.
   def pair?
-    the_cards = cards_by_rank.values
-    the_cards[0].count == 2 && the_cards[1].count < 2
+    cards_by_rank.values.first.count >= 2
   end
 
-  # Does this hand have only singleton ranks? Note that this method can return
-  # true if the hand has a flush or straight.
+  # Determines if this hand contains no pairs.
+  #
+  # @return [Boolean] true iff no two cards in the hand have the same rank.
   def high_card?
     cards_by_rank.count == @size
   end
@@ -116,8 +144,19 @@ class PokerHand
     @cards
   end
 
+  def size
+    @size
+  end
+
   protected
 
+  # Gets the `@size`-card ace-low straight in the hand.
+  #
+  # This method's behavior is well-defined iff the hand does in fact contain
+  # an [:ace, :two, ..., :`@size`] straight.
+  #
+  # @return [Array<Card>] the cards that make up the ace-low straight, in rank
+  #   order from highest to lowest.
   def ace_low_straight(sorted_cards: cards_sorted_ace_high)
     u = cards_sorted_ace_high.uniq(&:rank)
     u.drop(@size - cards_needed + 1) << u.first
@@ -127,14 +166,15 @@ class PokerHand
 
   # Sorts the cards by rank.
   #
-  # @return [Array<Card>] the cards sorted by rank
+  # @return [Array<Card>] the cards sorted by rank.
   def cards_sorted_ace_high
     @cards_sorted_ace_high ||= @cards.sort!.reverse!
   end
 
   # Groups all the cards in the hand by rank.
   #
-  # @return [Hash] a hash where the keys are the ranks and the values are arrays of cards with that rank, sorted by count then rank
+  # @return [Hash] a hash where the keys are the ranks and the values are arrays
+  #   of cards with that rank, sorted by count then rank.
   def cards_by_rank
     @cards_by_rank ||= @cards.group_by(&:rank).sort do |b,a|
       cmp_key_a, cmp_key_b = [a, b].map {|entry| entry[1]}
@@ -146,7 +186,8 @@ class PokerHand
 
   # Groups all the cards in the hand by suit.
   #
-  # @return [Hash] a hash where the keys are the suits and the values are arrays of cards with that suit
+  # @return [Hash] a hash where the keys are the suits and the values are arrays
+  #   of cards with that suit.
   def cards_by_suit
     @cards_by_suit ||= @cards.group_by(&:suit)
   end
@@ -154,7 +195,7 @@ class PokerHand
   # The number of cards needed to complete a straight or flush
   # in this hand.
   #
-  # @return [Integer] the number of cards needed to complete this hand
+  # @return [Integer] the number of cards needed to complete this hand.
   def cards_needed
     [@size, 5].min
   end
