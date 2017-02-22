@@ -23,16 +23,13 @@ class TestPokerHand < Minitest::Test
   end
 
   def test_flush?
-    hand = from_str %w(6C 8C KC 3C AC 8H 8D)
-    assert hand.flush?
-
-    hand = from_str %w(7H 8H 9H TC JH 3C KH)
-    assert hand.flush?
+    hand = random_flush(size: [3,4,5,7].sample)
+    assert hand.flush?, "Expected #{hand.to_s} to be a flush."
   end
 
   def test_straight?
-    hand = from_str %w(9C TC JS QH 8C 6D AD)
-    assert hand.straight?
+    hand = random_straight(size: [3,4,5,7].sample)
+    assert hand.straight?, "Expected #{hand.to_s} to be a straight."
   end
 
   def test_three_of_a_kind?
@@ -216,50 +213,46 @@ class TestPokerHand < Minitest::Test
     PokerHand.new cards.shuffle!
   end
 
-
-  def random_hand_flush(size: 5)
-    flush_suit = random_suit
-    cards = Card::ranks.sample([size, 5].min).map do |rank|
-      Card.new(rank, flush_suit)
-    end
-
-    return cards if cards.count >= size
-
-    cards += Card::create_deck.reject do |card|
-      cards.include?(card)
-    end.sample(size - cards.count)
+  def random_flush(size: 5)
+    cards_needed = [size, 5].min
+    make_flush(Card::ranks.sample(cards_needed), size: size)
   end
 
   def make_flush(ranks_array, size: 5)
     cards_needed = [size, 5].min
     flush_suit = random_suit
 
+    ranks_array += (Card::ranks - ranks_array).sample(cards_needed - ranks_array.count) unless ranks_array.count == cards_needed
+
     cards = ranks_array.map { |rank| Card.new(rank, flush_suit) }
 
-    flush_cards_still_needed = cards_needed - cards.count
-    if flush_cards_still_needed > 0
-      (Card::ranks - ranks_array).sample(flush_cards_still_needed).each do |rank|
-        cards << Card.new(rank, flush_suit)
-      end
+    if cards.count < size
+      deck = Card::create_deck.reject {|card| cards.include?(card)}
+      cards += deck.sample(size - 5)
     end
 
-    return cards if cards.count >= size
-
-    cards += Card::create_deck.reject do |card|
-      cards.include?(card)
-    end.sample(size - cards.count)
+    PokerHand.new cards.shuffle!
   end
 
-  def random_hand_straight(size: 5)
+  def random_straight(size: 5)
+    cards_needed = [size, 5].min
+    make_straight(Card::ranks.drop(cards_needed - 2).sample, size: size)
+  end
+
+  def make_straight(high_rank, size: 5)
     cards_needed = [size, 5].min
 
-    high_index = ((cards_needed - 2)...13).to_a.sample
-    cards = (0...5).map do |i|
+    high_index = Card::rank_index(high_rank)
+    cards = (0...cards_needed).map do |i|
       Card.new(Card::ranks[high_index - i], random_suit)
     end
 
-    deck = Card::create_deck.reject {|card| cards.include?(card)}
-    cards += deck.sample([0, size - 5].max)
+    if cards.count < size
+      deck = Card::create_deck.reject {|card| cards.include?(card)}
+      cards += deck.sample(size - 5)
+    end
+
+    PokerHand.new cards.shuffle!
   end
 
 
