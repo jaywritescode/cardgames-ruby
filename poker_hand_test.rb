@@ -8,14 +8,8 @@ require_relative 'cards'
 class TestPokerHand < Minitest::Test
 
   def test_straight_flush
-    hand = from_str %w(6H 7H 8H 9H TH JH KD)
-    assert hand.straight_flush?
-
-    hand = from_str %w(AD 2D 3D 4D 5D 9C 9D)
-    assert hand.straight_flush?
-
-    hand = from_str %w(9S TS JS QH KS AS KD)
-    assert !hand.straight_flush?
+    hand = random_straight_flush(size: (3..7).to_a.sample)
+    assert hand.straight_flush?, "Expected #{hand.to_s} to be a straight flush."
   end
 
   def test_four_of_a_kind
@@ -165,7 +159,7 @@ class TestPokerHand < Minitest::Test
   def random_straight_flush(size: 5)
     cards_needed = [size, 5].min
     high_index = ((cards_needed - 2)...13).to_a.sample
-    make_straight_flush(high_card_rank_idx: cards_needed, size: size)
+    make_straight_flush(high_card_rank_idx: high_index, size: size)
   end
 
   def make_straight_flush(high_card_rank_idx:, size: 5)
@@ -176,10 +170,12 @@ class TestPokerHand < Minitest::Test
       Card.new(Card::ranks[high_card_rank_idx - i], flush_suit)
     end
 
-    return cards if cards.count >= size
+    if cards.count < size
+      deck = Card::create_deck.reject {|card| cards.include?(card)}
+      cards += deck.sample(size - 5)
+    end
 
-    deck = Card::create_deck.reject {|card| cards.include?(card)}
-    cards += deck.sample(size - 5)
+    PokerHand.new cards.shuffle!
   end
 
   def random_hand_flush(size: 5)
