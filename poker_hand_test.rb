@@ -33,8 +33,8 @@ class TestPokerHand < Minitest::Test
   end
 
   def test_three_of_a_kind?
-    hand = from_str %w(AD AH AC 5C 8D 9C 3H)
-    assert hand.three_of_a_kind?
+    hand = random_three_of_a_kind(size: [3,4,5,7].sample)
+    assert hand.three_of_a_kind?, "Expected #{hand.to_s} to be a three of a kind."
   end
 
   def test_two_pair?
@@ -251,17 +251,18 @@ class TestPokerHand < Minitest::Test
     PokerHand.new cards.shuffle!
   end
 
+  def random_three_of_a_kind(size: 5)
+    make_three_of_a_kind(Card::ranks.sample, size: size)
+  end
 
-  def random_hand_three_of_a_kind(size: 5)
-    trip_rank = random_rank
+  def make_three_of_a_kind(trip_rank, size: 5)
     cards = Card::suits.sample(3).map do |suit|
       Card.new(trip_rank, suit)
     end
 
-    Card::ranks.select {|r| r != trip_rank}.sample(size - 3).each do |r|
-      cards << Card.new(r, random_suit)
-    end
-    cards
+    deck = Card::create_deck.reject {|card| cards.include?(card)}
+
+    PokerHand.new (cards + deck.sample(size - 3)).shuffle!
   end
 
   def random_hand_more_than_one_pair(size: 5)
