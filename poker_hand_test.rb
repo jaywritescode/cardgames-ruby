@@ -38,7 +38,7 @@ class TestPokerHand < Minitest::Test
   end
 
   def test_two_pair?
-    hand = from_str %w(6C 6D KH KS 8C 8D 9C)
+    hand = random_two_pair(size: [4,5,7].sample)
     assert hand.two_pair?
   end
 
