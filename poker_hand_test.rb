@@ -8,21 +8,18 @@ require_relative 'cards'
 class TestPokerHand < Minitest::Test
 
   def test_straight_flush
-    hand = random_straight_flush(size: (3..7).to_a.sample)
+    hand = random_straight_flush(size: [3,4,5,7].sample)
     assert hand.straight_flush?, "Expected #{hand.to_s} to be a straight flush."
   end
 
   def test_four_of_a_kind
-    hand = from_str %w(2C 2H 2D 2S 6H 9C TC)
-    assert hand.four_of_a_kind?
+    hand = random_four_of_a_kind(size: [4,5,7].sample)
+    assert hand.four_of_a_kind?, "Expected #{hand.to_s} to be four of a kind."
   end
 
   def test_full_house?
-    hand = from_str %w(4H 4D 4C KH KS 3D 7S)
-    assert hand.full_house?
-
-    hand = from_str %w(4H 4D 4C KH KS KH 8D)
-    assert hand.full_house?
+    hand = random_full_house(size: [5,7].sample)
+    assert hand.full_house?, "Expected #{hand.to_s} to be a full house."
   end
 
   def test_flush?
@@ -178,6 +175,48 @@ class TestPokerHand < Minitest::Test
     PokerHand.new cards.shuffle!
   end
 
+  def random_four_of_a_kind(size: 5)
+    make_four_of_a_kind(random_rank, size: size)
+  end
+
+  def make_four_of_a_kind(quad_rank, size: 5)
+    cards = Card::suits.map do |suit|
+      Card.new(quad_rank, suit)
+    end
+
+    if cards.count < size
+      deck = Card::create_deck.reject {|card| cards.include?(card)}
+      cards += deck.sample(size - 5)
+    end
+
+    PokerHand.new cards.shuffle!
+  end
+
+  def random_full_house(size: 5)
+    make_full_house(random_rank, size: size)
+  end
+
+  def make_full_house(trip_rank, pair_rank: nil, size: 5)
+    cards = Card::suits.sample(3).map do |suit|
+      Card.new(trip_rank, suit)
+    end
+    cards += Card::suits.sample(2).map do |suit|
+      Card.new(pair_rank ||= (Card::ranks - [trip_rank]).sample, suit)
+    end
+
+    if cards.count < size
+      deck = Card::create_deck.reject {|card| cards.include? (card)}
+      1.times do
+        more_cards = deck.sample(size - 5)
+        redo if more_cards.any? {|c| c.rank == trip_rank} || more_cards.count {|c| c.rank == pair_rank} > 1
+        cards += more_cards
+      end
+    end
+
+    PokerHand.new cards.shuffle!
+  end
+
+
   def random_hand_flush(size: 5)
     flush_suit = random_suit
     cards = Card::ranks.sample([size, 5].min).map do |rank|
@@ -223,47 +262,6 @@ class TestPokerHand < Minitest::Test
     cards += deck.sample([0, size - 5].max)
   end
 
-  def random_four_of_a_kind(size: 5)
-    make_four_of_a_kind(random_rank, size: size)
-  end
-
-  # Gets a collection of +size+ cards that includes a four of a kind.
-  #
-  # @param quad_rank [Symbol] the rank of the four of a kind in the hand
-  # @param singleton_rank [Symbol] the singleton card's rank
-  # @return [Array<Card>] the cards in the hand
-  def make_four_of_a_kind(quad_rank, singleton_rank: nil, size: 5)
-    cards = Card::suits.map do |suit|
-      Card.new(quad_rank, suit)
-    end
-
-    return cards if cards.count == size
-
-    cards << random_card(rank: singleton_rank || (Card::ranks - [quad_rank]).sample)
-
-    deck = Card::create_deck.reject {|card| cards.include? card}
-    cards += deck.sample([0, size - 5].max)
-  end
-
-  def random_full_house(size: 5)
-    make_full_house(random_rank, size: size)
-  end
-
-  def make_full_house(trip_rank, pair_rank: nil, size: 5)
-    cards = Card::suits.sample(3).map do |suit|
-      Card.new(trip_rank, suit)
-    end
-    cards += Card::suits.sample(2).map do |suit|
-      Card.new(pair_rank ||= (Card::ranks - [trip_rank]).sample, suit)
-    end
-
-    return cards if cards.count == size
-
-    deck = Card::create_deck.reject do |card|
-      card.rank == trip_rank || cards.include?(card)
-    end
-    cards += deck.sample(size - 5)
-  end
 
   def random_hand_three_of_a_kind(size: 5)
     trip_rank = random_rank
