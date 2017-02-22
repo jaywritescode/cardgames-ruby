@@ -34,22 +34,22 @@ class TestPokerHand < Minitest::Test
 
   def test_three_of_a_kind?
     hand = random_three_of_a_kind(size: [3,4,5,7].sample)
-    assert hand.three_of_a_kind?, "Expected #{hand.to_s} to be a three of a kind."
+    assert hand.three_of_a_kind?, "Expected #{hand.to_s} to have a three of a kind."
   end
 
   def test_two_pair?
     hand = random_two_pair(size: [4,5,7].sample)
-    assert hand.two_pair?
+    assert hand.two_pair?, "Expected #{hand.to_s} to have two pair."
   end
 
   def test_pair?
-    hand = from_str %w(7C 7D 8C 9C TC JC QC)
-    assert hand.pair?
+    hand = random_pair(size: [3,4,5,7].sample)
+    assert hand.pair?, "Expected #{hand.to_s} to have one pair."
   end
 
   def test_high_card?
-    hand = from_str %w(3D 6H 8S KD AC 5H 9D)
-    assert hand.high_card?
+    hand = random_high_card_hand(size: [3,4,5,7].sample)
+    assert hand.high_card?, "Expected #{hand.to_s} to be a high card hand."
   end
 
   def test_compare
@@ -265,8 +265,12 @@ class TestPokerHand < Minitest::Test
     PokerHand.new (cards + deck.sample(size - 3)).shuffle!
   end
 
+  def random_two_pair(size: 5)
+    make_two_pair([], size: 5)
+  end
+
   def make_two_pair(pair_ranks, size: 5)
-    pair_ranks += (Card::ranks - pair_ranks).sample([0, pair_ranks.count - 2].max)
+    pair_ranks += (Card::ranks - pair_ranks).sample([0, 2 - pair_ranks.count].max)
     cards = pair_ranks.collect_concat do |rank|
       Card::suits.sample(2).map do |suit|
         Card.new(rank, suit)
@@ -275,48 +279,32 @@ class TestPokerHand < Minitest::Test
 
     if cards.count < size
       deck = Card::create_deck.reject {|card| cards.include?(card)}
-      cards += deck.sample(size - 5)
+      cards += deck.sample(size - cards.count)
     end
 
     PokerHand.new cards.shuffle!
   end
 
-  def random_hand_more_than_one_pair(size: 5)
-    raise unless size >= 4
-
-    pair_ranks = Card::ranks.sample(2)
-    cards = pair_ranks.flat_map do |rank|
-      Card::suits.sample(2).map do |suit|
-        Card.new(rank, suit)
-      end
-    end
-
-    return cards unless size > 4
-
-    # prevents three of a kind
-    deck = Card::create_deck.delete_if do |card|
-      pair_ranks.include?(card.rank) || [:hearts, :spades].include?(card.suit)
-    end
-
-    cards += deck.sample(size - 4)
+  def random_pair(size: 5)
+    make_pair(Card::ranks.sample, size: size)
   end
 
-  def random_hand_one_pair(size: 5)
-    pair_rank = random_rank
+  def make_pair(pair_rank, size: 5)
     cards = Card::suits.sample(2).map do |suit|
       Card.new(pair_rank, suit)
     end
 
-    Card::ranks.select {|r| r != pair_rank}.sample(size - 2).each do |r|
-      cards << Card.new(r, random_suit)
-    end
-    cards
+    deck = Card::create_deck.reject {|card| cards.include?(card)}
+
+    PokerHand.new (cards + deck.sample(size - cards.count)).shuffle!
   end
 
-  # it's possible to get a straight or a flush from this
-  def random_hand_no_pairs(size: 5)
-    Card::ranks.sample(size).inject([]) do |acc, rank|
-      acc << Card.new(rank, random_suit)
+  def random_high_card_hand(size: 5)
+    loop do
+      ph = PokerHand.new (Card::ranks.sample(size).inject([]) do |acc, rank|
+        acc << Card.new(rank, random_suit)
+      end)
+      break ph unless ph.flush? || ph.straight?
     end
   end
 
