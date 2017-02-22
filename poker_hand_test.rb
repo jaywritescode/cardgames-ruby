@@ -202,12 +202,8 @@ class TestPokerHand < Minitest::Test
     end
 
     if cards.count < size
-      deck = Card::create_deck.reject {|card| cards.include? (card)}
-      1.times do
-        more_cards = deck.sample(size - 5)
-        redo if more_cards.any? {|c| c.rank == trip_rank} || more_cards.count {|c| c.rank == pair_rank} > 1
-        cards += more_cards
-      end
+      deck = Card::create_deck.reject {|card| cards.include?(card)}
+      cards += deck.sample(size - 5)
     end
 
     PokerHand.new cards.shuffle!

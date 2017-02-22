@@ -71,8 +71,10 @@ class PokerHand
   #
   # @return [Boolean] true iff the hand contains a full house.
   def full_house?
+    return unless size >= 5
+
     the_cards = cards_by_rank.values
-    the_cards[0].count == 3 && the_cards[1].count >= 2
+    the_cards[0].count >= 3 && the_cards[1].count >= 2
   end
 
   # Determines if this hand contains a flush.
