@@ -265,6 +265,22 @@ class TestPokerHand < Minitest::Test
     PokerHand.new (cards + deck.sample(size - 3)).shuffle!
   end
 
+  def make_two_pair(pair_ranks, size: 5)
+    pair_ranks += (Card::ranks - pair_ranks).sample([0, pair_ranks.count - 2].max)
+    cards = pair_ranks.collect_concat do |rank|
+      Card::suits.sample(2).map do |suit|
+        Card.new(rank, suit)
+      end
+    end
+
+    if cards.count < size
+      deck = Card::create_deck.reject {|card| cards.include?(card)}
+      cards += deck.sample(size - 5)
+    end
+
+    PokerHand.new cards.shuffle!
+  end
+
   def random_hand_more_than_one_pair(size: 5)
     raise unless size >= 4
 

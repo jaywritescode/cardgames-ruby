@@ -111,6 +111,8 @@ class PokerHand
   # @return [Boolean] true iff the hand contains at least two cards of rank X
   #   and two cards of rank Y, where X != Y.
   def two_pair?
+    return unless size >= 4
+
     the_cards = cards_by_rank.values
     the_cards[0].count >= 2 && the_cards[1].count >= 2
   end
